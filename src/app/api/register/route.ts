@@ -48,9 +48,10 @@ export async function POST(request: NextRequest) {
     );
 
     if (!result.success) {
+      const isConflict = result.error?.includes('already');
       return NextResponse.json(
         { success: false, error: result.error },
-        { status: 409 }
+        { status: isConflict ? 409 : 500 }
       );
     }
 

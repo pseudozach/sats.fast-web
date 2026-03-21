@@ -22,92 +22,16 @@ function getClient(): SupabaseClient {
   return _client;
 }
 
-// Idempotent schema bootstrap — runs once per cold start, safe to re-run
+// Check tables exist on first call — logs if missing
 async function ensureSchema(): Promise<void> {
   if (_migrated) return;
   const supabase = getClient();
 
-  // Use raw SQL via rpc; requires a one-time Supabase function (below) OR
-  // we can use the REST-compatible approach: just try to select from users.
-  // If it fails, we create the table via the Supabase Management API / SQL.
-  // Simplest: use supabase.rpc to execute raw SQL.
-  // We create a helper function in Supabase if it doesn't exist, but that's
-  // chicken-and-egg. Instead, just attempt a select — if the table doesn't
-  // exist, create it via the postgres REST endpoint using service role.
-
   const { error } = await supabase.from('users').select('id').limit(1);
-
-  if (error && error.message.includes('relation') && error.message.includes('does not exist')) {
-    // Table doesn't exist — create it via raw SQL
-    const sql = `
-      create table if not exists public.users (
-        id uuid default gen_random_uuid() primary key,
-        username text not null,
-        spark_public_key text not null,
-        liquid_address text,
-        created_at timestamp with time zone default now()
-      );
-      create unique index if not exists users_username_unique on public.users (lower(username));
-      create unique index if not exists users_spark_public_key_unique on public.users (spark_public_key);
-      create unique index if not exists users_liquid_address_unique on public.users (liquid_address) where liquid_address is not null;
-      create index if not exists users_username_idx on public.users (lower(username));
-
-      create table if not exists public.config (
-        key text primary key,
-        value text not null,
-        created_at timestamp with time zone default now()
-      );
-    `;
-
-    const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
-      },
-      body: JSON.stringify({ query: sql }),
-    });
-
-    if (!res.ok) {
-      // Fallback: try creating via the Supabase SQL endpoint (pg-meta)
-      const pgRes = await fetch(`${process.env.SUPABASE_URL}/pg/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
-        },
-        body: JSON.stringify({ query: sql }),
-      });
-
-      if (!pgRes.ok) {
-        console.error(
-          'Auto-migration failed. Please run this SQL in Supabase SQL editor:\n' + sql
-        );
-        // Don't throw — table might already exist via another path
-      }
-    }
-  } else {
-    // Also ensure config table exists (best-effort)
-    const { error: cfgErr } = await supabase.from('config').select('key').limit(1);
-    if (cfgErr && cfgErr.message.includes('does not exist')) {
-      // Try to create config table
-      try {
-        const sql = `create table if not exists public.config (key text primary key, value text not null, created_at timestamp with time zone default now());`;
-        await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/exec_sql`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
-          },
-          body: JSON.stringify({ query: sql }),
-        });
-      } catch {
-        // best-effort
-      }
-    }
+  if (error && error.message.includes('does not exist')) {
+    console.error(
+      '\n⚠️  "users" table not found. Run the migration SQL in Supabase SQL Editor.\n'
+    );
   }
 
   _migrated = true;
@@ -207,11 +131,11 @@ export async function registerUser(
   });
 
   if (error) {
+    console.error('Supabase insert error:', JSON.stringify(error));
     if (error.code === '23505') {
       return { success: false, error: 'Username or address already registered' };
     }
-    console.error('Supabase insert error:', error);
-    return { success: false, error: 'Registration failed. Please try again.' };
+    return { success: false, error: `Database error: ${error.message || error.code || 'unknown'}` };
   }
 
   return { success: true };
