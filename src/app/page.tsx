@@ -1,14 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { toSvg } from 'jdenticon';
+
+type RecentUser = {
+  username: string;
+  address: string;
+  createdAt: string;
+};
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
+function Identicon({ value, size = 48 }: { value: string; size?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.innerHTML = toSvg(value, size, {
+        backColor: '#00000000',
+        saturation: { color: 0.6 },
+        lightness: { color: [0.4, 0.7], grayscale: [0.3, 0.6] },
+      });
+    }
+  }, [value, size]);
+  return <div ref={ref} className="rounded-full overflow-hidden" />;
+}
 
 export default function Home() {
   const [copied, setCopied] = useState(false);
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
 
   const installCommand =
     'curl -sSL https://raw.githubusercontent.com/pseudozach/sats.fast/main/scripts/install.sh | bash';
+
+  useEffect(() => {
+    fetch('/api/recent-users')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.users?.length) setRecentUsers(d.users);
+      })
+      .catch(() => {});
+  }, []);
 
   async function copyToClipboard() {
     try {
@@ -141,6 +185,37 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Community */}
+      {recentUsers.length > 0 && (
+        <section className="border-t border-[#1a1a1a] py-20 px-6">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-3 text-center">Community</h2>
+            <p className="text-sm text-[#555] text-center mb-10">
+              Recently claimed lightning addresses
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {recentUsers.map((user) => (
+                <div
+                  key={user.username}
+                  className="bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl p-5 flex flex-col items-center text-center hover:border-[#333] transition-colors"
+                >
+                  <div className="mb-3 rounded-full bg-[#111] p-1 border border-[#1a1a1a]">
+                    <Identicon value={user.address} size={48} />
+                  </div>
+                  <span className="text-sm font-medium text-white truncate max-w-full">
+                    {user.address}
+                  </span>
+                  <span className="text-xs text-[#555] mt-1">
+                    {timeAgo(user.createdAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* How it works */}
       <section className="border-t border-[#1a1a1a] py-20 px-6">
