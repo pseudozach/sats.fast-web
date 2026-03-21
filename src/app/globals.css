@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bitcoin: #f7931a;
+  --bitcoin-dark: #e8850f;
+  --bg: #050505;
+  --bg-card: #0d0d0d;
+  --border: #1a1a1a;
+  --text: #fafafa;
+  --text-muted: #888;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--bitcoin);
+  color: #000;
+}
+
+/* Glow effect for the logo */
+.logo-glow {
+  filter: drop-shadow(0 0 40px rgba(247, 147, 26, 0.15));
+}
+
+/* Animated gradient border */
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--bitcoin), transparent 50%, var(--bitcoin));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Code block styling */
+.code-block {
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 1.25rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Input styling */
+input[type='text'] {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type='text']:focus {
+  border-color: var(--bitcoin);
+  box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+}
+
+/* Button hover */
+.btn-primary {
+  background: var(--bitcoin);
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+  background: var(--bitcoin-dark);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Fade in animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease-out forwards;
+}
+
+.animate-fade-up-delay {
+  animation: fadeUp 0.6s ease-out 0.15s forwards;
+  opacity: 0;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fadeUp 0.6s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+/* Copy button */
+.copy-btn {
+  transition: color 0.2s;
+}
+
+.copy-btn:hover {
+  color: var(--bitcoin);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
