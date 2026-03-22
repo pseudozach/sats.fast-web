@@ -59,11 +59,11 @@ export function validateSparkPublicKey(key: string): { valid: boolean; error?: s
     return { valid: false, error: 'Spark public key is required' };
   }
 
-  const trimmed = key.trim();
+  const trimmed = key.trim().toLowerCase();
 
-  // Spark public keys are hex-encoded - typically 66 chars (compressed) or 130 chars (uncompressed)
-  if (!/^[0-9a-fA-F]{64,130}$/.test(trimmed)) {
-    return { valid: false, error: 'Invalid Spark public key format' };
+  // Compressed secp256k1 public key: 66 hex chars, must start with 02 or 03
+  if (!/^(02|03)[0-9a-f]{64}$/.test(trimmed)) {
+    return { valid: false, error: 'Invalid Spark public key. Must be a 33-byte compressed public key (66 hex chars starting with 02 or 03).' };
   }
 
   return { valid: true };

@@ -164,8 +164,9 @@ export default function Home() {
 
             <div className="gradient-border rounded-2xl bg-[#0d0d0d] p-8">
               <p className="text-[#ccc] text-sm leading-relaxed mb-6">
-                Once your agent is set up, claim your username so your friends can send you money.
-                Tell your wallet{' '}
+                Once your agent is running, just tell it{' '}
+                <span className="text-white font-medium">&ldquo;claim my username&rdquo;</span>{' '}
+                and it&apos;ll handle the rest. Then anyone can send you bitcoin or USD —{' '}
                 <span className="text-white font-medium">&ldquo;send $5 to z@sats.fast&rdquo;</span>{' '}
                 or{' '}
                 <span className="text-white font-medium">&ldquo;send ₿5000 to skye@sats.fast&rdquo;</span>.

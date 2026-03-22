@@ -100,13 +100,10 @@ export default function ClaimPage() {
               <div className="text-center mb-10 animate-fade-up">
                 <h1 className="text-3xl font-bold mb-3">Claim your username</h1>
                 <p className="text-[#888] text-sm leading-relaxed">
-                  Register a lightning address so anyone can send you money.
+                  The easiest way: just tell your agent{' '}
+                  <span className="text-white font-medium">&ldquo;claim my username&rdquo;</span>.
                   <br />
-                  First{' '}
-                  <Link href="/" className="text-bitcoin hover:underline">
-                    install your agent
-                  </Link>
-                  , then come back here.
+                  Or use this form as a fallback.
                 </p>
               </div>
 
