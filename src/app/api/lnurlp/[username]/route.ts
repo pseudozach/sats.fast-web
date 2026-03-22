@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserByUsername } from '@/lib/supabase';
 import { validateUsername, LIMITS } from '@/lib/validation';
+import { getNostrPubkey } from '@/lib/nostr';
 
 const DOMAIN = process.env.DOMAIN || 'sats.fast';
 
@@ -28,8 +29,16 @@ export async function GET(
       );
     }
 
+    // Get server nostr pubkey for NIP-57 zap support
+    let nostrPubkey: string | undefined;
+    try {
+      nostrPubkey = await getNostrPubkey();
+    } catch (err) {
+      console.error('Failed to get nostr pubkey (zaps disabled):', err);
+    }
+
     // LUD-06/LUD-16 compliant discovery response
-    const response = {
+    const response: Record<string, unknown> = {
       callback: `https://${DOMAIN}/lnurl/payreq/${username}`,
       maxSendable: LIMITS.MAX_AMOUNT_SATS * 1000,
       minSendable: LIMITS.MIN_AMOUNT_MSAT,
@@ -40,6 +49,12 @@ export async function GET(
       tag: 'payRequest',
       commentAllowed: LIMITS.MAX_COMMENT_LENGTH,
     };
+
+    // NIP-57: advertise zap support if nostr key is available
+    if (nostrPubkey) {
+      response.allowsNostr = true;
+      response.nostrPubkey = nostrPubkey;
+    }
 
     return NextResponse.json(response);
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserByUsername } from '@/lib/supabase';
 import { createInvoiceForUser } from '@/lib/spark';
 import { validateUsername, validateAmount, sanitizeComment } from '@/lib/validation';
+import { validateZapRequest } from '@/lib/nostr';
 
 export async function GET(
   request: NextRequest,
@@ -12,6 +13,7 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const amount = searchParams.get('amount');
     const comment = searchParams.get('comment');
+    const nostrParam = searchParams.get('nostr');
 
     // Validate username
     const usernameValidation = validateUsername(username);
@@ -32,6 +34,18 @@ export async function GET(
     }
 
     const amountSats = amountValidation.amountSats!;
+    const amountMsat = parseInt(amount!, 10);
+
+    // NIP-57: validate zap request if present
+    if (nostrParam) {
+      const zapValidation = validateZapRequest(nostrParam, amountMsat);
+      if (!zapValidation.valid) {
+        return NextResponse.json(
+          { status: 'ERROR', reason: zapValidation.error },
+          { status: 400 }
+        );
+      }
+    }
 
     // Sanitize comment
     const sanitizedComment = sanitizeComment(comment);
